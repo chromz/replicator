@@ -1,1 +1,6 @@
-[servers]
+[options]
+polling-rate = 5
+
+[[primary]]
+name = "localhost"
+address = "localhost"
