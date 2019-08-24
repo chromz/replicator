@@ -6,13 +6,13 @@ import (
 )
 
 type LogEvent struct {
-	id int
+	id      int
 	message string
 }
 
 var (
 	errorMessage = LogEvent{0, "%s %s"}
-	initMessage = LogEvent{1, "Initializing %s with %s"}
+	initMessage  = LogEvent{1, "Initializing %s with %s"}
 )
 
 func init() {
@@ -36,7 +36,6 @@ func InitMessage(msg, with string) {
 	logrus.Infof(initMessage.message, msg, with)
 }
 
-func Info(msg string) {
-	logrus.Info(msg)
+func Info(args ...interface{}) {
+	logrus.Info(args...)
 }
-

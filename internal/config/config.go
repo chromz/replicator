@@ -11,16 +11,16 @@ func LoadConfig() error {
 	viper.AddConfigPath("/etc/replicator/")
 	viper.AddConfigPath("./configs")
 	viper.SetDefault("port", 4690)
-	viper.SetDefault("polling-rate", 5)
+	viper.SetDefault("directory", "./")
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Error("Error reading config file", err)
 		return err
 	}
 	log.Info("Config file loaded")
-	return nil;
+	return nil
 }
 
-func GetPollingRate() int64 {
-	return viper.GetInt64("polling-rate")
+func GetDirectory() string {
+	return viper.GetString("directory")
 }
