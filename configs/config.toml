@@ -1,6 +1,7 @@
 [options]
-polling-rate = 5
+directory = "sync"
+module = "wiki"
 
-[[primary]]
-name = "localhost"
+[server]
+name = "Wiki server"
 address = "localhost"
