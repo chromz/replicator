@@ -4,4 +4,4 @@ module = "wiki"
 
 [server]
 name = "Wiki server"
-address = "localhost"
+address = "174.138.47.33"

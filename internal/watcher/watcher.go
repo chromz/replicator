@@ -8,9 +8,9 @@ import (
 	"os/exec"
 )
 
-func runRsync(flags, name, url string) (string, string, error) {
+func runRsync(params ...string) (string, string, error) {
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("rsync", flags, name, url)
+	cmd := exec.Command("rsync", params...)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
@@ -41,7 +41,17 @@ func doSync(event fsnotify.Event) {
 		log.Info("Updated file: ", event.Name)
 		log.Info(stdout)
 	} else if event.Op&fsnotify.Remove == fsnotify.Remove {
-
+		dir := config.Directory()
+		if dir[len(dir)-1:] != "/" {
+			dir += "/"
+		}
+		stdout, stderr, err := runRsync("-avhO", "--delete", dir, url)
+		if err != nil {
+			log.Error(stderr, err)
+			return
+		}
+		log.Info("Deleted file: ", event.Name)
+		log.Info(stdout)
 	}
 }
 
@@ -62,7 +72,7 @@ func watchFile(watcher *fsnotify.Watcher) {
 	}
 }
 
-func Start(directory string) {
+func Start() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Error("Unable to create watcher", err)
@@ -71,9 +81,14 @@ func Start(directory string) {
 
 	done := make(chan bool)
 	go watchFile(watcher)
-	err = watcher.Add(config.Directory())
+	directory := config.Directory()
+	err = watcher.Add(directory)
 	if err != nil {
 		log.Error("Unable to add directory to watch list", err)
 	}
+	log.InitMessage(
+		"rclient",
+		"directory \""+directory+"\"",
+	)
 	<-done
 }
