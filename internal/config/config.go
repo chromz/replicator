@@ -12,8 +12,9 @@ type Config struct {
 }
 
 type Options struct {
-	Directory string
-	Module    string
+	Directory   string
+	Module      string
+	PollingRate int `mapstructure:"polling-rate"`
 }
 
 type Server struct {
@@ -30,6 +31,7 @@ func LoadConfig() error {
 	viper.AddConfigPath("./configs")
 	viper.SetDefault("port", 4690)
 	viper.SetDefault("directory", "/var/replicator/sync/")
+	viper.SetDefault("polling-rate", 5)
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Error("Error reading config file", err)
@@ -50,6 +52,15 @@ func LoadConfig() error {
 		return err
 
 	}
+	dir := loadedConfig.Options.Directory
+	if dir == "" {
+		err := errors.New("no server address")
+		log.Error("Invalid config file", err)
+		return err
+	}
+	if dir[len(dir)-1:] != "/" {
+		loadedConfig.Options.Directory += "/"
+	}
 	log.Info("Config file loaded")
 	return nil
 }
@@ -64,4 +75,8 @@ func Module() string {
 
 func RsyncServer() Server {
 	return loadedConfig.Server
+}
+
+func PollingRate() int {
+	return loadedConfig.Options.PollingRate
 }

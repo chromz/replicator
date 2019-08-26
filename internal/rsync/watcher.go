@@ -1,4 +1,4 @@
-package watcher
+package rsync
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"os/exec"
 )
+
+var url string
 
 func runRsync(params ...string) (string, string, error) {
 	var stdout, stderr bytes.Buffer
@@ -21,9 +23,6 @@ func runRsync(params ...string) (string, string, error) {
 }
 
 func doSync(event fsnotify.Event) {
-	host := config.RsyncServer().Address
-	module := config.Module()
-	url := host + "::" + module
 	if event.Op&fsnotify.Create == fsnotify.Create {
 		stdout, stderr, err := runRsync("-avzh", event.Name, url)
 		if err != nil {
@@ -42,9 +41,6 @@ func doSync(event fsnotify.Event) {
 		log.Info(stdout)
 	} else if event.Op&fsnotify.Remove == fsnotify.Remove {
 		dir := config.Directory()
-		if dir[len(dir)-1:] != "/" {
-			dir += "/"
-		}
 		stdout, stderr, err := runRsync("-avhO", "--delete", dir, url)
 		if err != nil {
 			log.Error(stderr, err)
@@ -78,7 +74,9 @@ func Start() {
 		log.Error("Unable to create watcher", err)
 	}
 	defer watcher.Close()
-
+	host := config.RsyncServer().Address
+	module := config.Module()
+	url = host + "::" + module
 	done := make(chan bool)
 	go watchFile(watcher)
 	directory := config.Directory()
@@ -86,6 +84,8 @@ func Start() {
 	if err != nil {
 		log.Error("Unable to add directory to watch list", err)
 	}
+	ticker := NewTicker(directory, url, config.PollingRate())
+	go ticker.Run()
 	log.InitMessage(
 		"rclient",
 		"directory \""+directory+"\"",

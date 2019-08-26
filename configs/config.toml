@@ -1,6 +1,7 @@
 [options]
 directory = "sync"
 module = "wiki"
+polling-rate = 5000
 
 [server]
 name = "Wiki server"
