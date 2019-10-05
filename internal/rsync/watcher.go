@@ -1,53 +1,27 @@
 package rsync
 
 import (
-	"bytes"
 	"github.com/chromz/replicator/internal/config"
 	"github.com/chromz/replicator/pkg/log"
 	"github.com/fsnotify/fsnotify"
-	"os/exec"
 )
 
-var url string
+// EventFunction is a function to handle an inotify event
+type EventFunction func(*fsnotify.Event)
 
-func runRsync(params ...string) (string, string, error) {
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("rsync", params...)
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	if err != nil {
-		return "", stderr.String(), err
-	}
-	return stdout.String(), "", nil
-}
+var (
+	onCreate EventFunction
+	onWrite  EventFunction
+	onRemove EventFunction
+)
 
 func doSync(event fsnotify.Event) {
 	if event.Op&fsnotify.Create == fsnotify.Create {
-		stdout, stderr, err := runRsync("-avzh", event.Name, url)
-		if err != nil {
-			log.Error(stderr, err)
-			return
-		}
-		log.Info("Created file: ", event.Name)
-		log.Info(stdout)
+		onCreate(&event)
 	} else if event.Op&fsnotify.Write == fsnotify.Write {
-		stdout, stderr, err := runRsync("-auvzh", event.Name, url)
-		if err != nil {
-			log.Error(stderr, err)
-			return
-		}
-		log.Info("Updated file: ", event.Name)
-		log.Info(stdout)
+		onWrite(&event)
 	} else if event.Op&fsnotify.Remove == fsnotify.Remove {
-		dir := config.Directory()
-		stdout, stderr, err := runRsync("-avhO", "--delete", dir, url)
-		if err != nil {
-			log.Error(stderr, err)
-			return
-		}
-		log.Info("Deleted file: ", event.Name)
-		log.Info(stdout)
+		onRemove(&event)
 	}
 }
 
@@ -68,15 +42,17 @@ func watchFile(watcher *fsnotify.Watcher) {
 	}
 }
 
-func Start() {
+// Start is a function to initialize watching for a file or directory for
+// inotify events
+func Start(createHandler, writeHandler, removeHandler EventFunction) {
+	onCreate = createHandler
+	onWrite = writeHandler
+	onRemove = removeHandler
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Error("Unable to create watcher", err)
 	}
 	defer watcher.Close()
-	host := config.RsyncServer().Address
-	module := config.Module()
-	url = host + "::" + module
 	done := make(chan bool)
 	go watchFile(watcher)
 	directory := config.Directory()
@@ -84,8 +60,6 @@ func Start() {
 	if err != nil {
 		log.Error("Unable to add directory to watch list", err)
 	}
-	ticker := NewTicker(directory, url, config.PollingRate())
-	go ticker.Run()
 	log.InitMessage(
 		"rclient",
 		"directory \""+directory+"\"",
