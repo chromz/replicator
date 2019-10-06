@@ -1,4 +1,4 @@
-package rsync
+package watcher
 
 import (
 	"github.com/chromz/replicator/internal/config"
@@ -61,7 +61,7 @@ func Start(createHandler, writeHandler, removeHandler EventFunction) {
 		log.Error("Unable to add directory to watch list", err)
 	}
 	log.InitMessage(
-		"rclient",
+		"watcher",
 		"directory \""+directory+"\"",
 	)
 	<-done
