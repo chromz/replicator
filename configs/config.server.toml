@@ -1,5 +1,5 @@
 [options]
-directory = "sync"
+directory = "/home/chromz/wiki"
 module = "wiki"
 
 [server]
