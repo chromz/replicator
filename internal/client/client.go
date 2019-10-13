@@ -41,6 +41,7 @@ func rsyncHandler(message string, command ...string) {
 
 // CreateHandler the handler for new files
 func CreateHandler(event *fsnotify.Event) {
+	log.Info(" TH E " + url)
 	rsyncHandler("Created file: "+event.Name, "-avzh", event.Name, url)
 }
 
