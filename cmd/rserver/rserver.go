@@ -2,26 +2,20 @@ package main
 
 import (
 	"github.com/chromz/replicator/internal/config"
-	"github.com/chromz/replicator/internal/server"
-	"github.com/chromz/replicator/internal/watcher"
+	// "github.com/chromz/replicator/internal/server"
+	// "github.com/chromz/replicator/internal/watcher"
 	"github.com/chromz/replicator/pkg/log"
 	"os"
 )
 
 func main() {
 	log.Info("Initializing replicator server...")
-	configPath := ""
-	if len(os.Args) == 2 {
-		configPath = os.Args[1]
-	}
-	err := config.LoadConfig(configPath)
+	err := config.LoadConfig()
 	if err != nil {
 		os.Exit(1)
 	}
-
-	hub := server.NewHub()
-	go hub.Run()
-	go server.Hear(hub)
-	watcher.Start(server.BroadcastHandler, server.UpdateHandler,
-		server.RemoveHandler)
+	log.Info("Sending created file")
+	// server.Load()
+	//watcher.Start(server.CreateHandler, server.WriteHandler,
+	//server.RemoveHandler)
 }

@@ -1,9 +1,0 @@
-[options]
-directory = "/home/chromz/wiki"
-module = "wiki"
-
-[server]
-name = "Wiki server"
-port = 4690
-# address = "174.138.47.33"
-address = "localhost"

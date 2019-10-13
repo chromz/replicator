@@ -19,23 +19,19 @@ type Options struct {
 
 type Server struct {
 	Name    string
-	Port    string
 	Address string
 }
 
 var loadedConfig Config
 
-func LoadConfig(name string) error {
+func LoadConfig() error {
 	viper.SetConfigType("toml")
-	if name != "" {
-		viper.SetConfigFile(name)
-	} else {
-		viper.AddConfigPath("/etc/replicator/")
-		viper.AddConfigPath("./configs")
-		viper.SetConfigName("config")
-	}
+	viper.SetConfigName("config")
+	viper.AddConfigPath("/etc/replicator/")
+	viper.AddConfigPath("./configs")
 	viper.SetDefault("port", 4690)
 	viper.SetDefault("directory", "/var/replicator/sync/")
+	viper.SetDefault("polling-rate", 5)
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Error("Error reading config file", err)
@@ -69,10 +65,6 @@ func LoadConfig(name string) error {
 	return nil
 }
 
-func Port() string {
-	return loadedConfig.Server.Port
-}
-
 func Directory() string {
 	return loadedConfig.Options.Directory
 }
@@ -85,6 +77,6 @@ func RsyncServer() Server {
 	return loadedConfig.Server
 }
 
-func Host() string {
-	return loadedConfig.Server.Address + ":" + loadedConfig.Server.Port
+func PollingRate() int {
+	return loadedConfig.Options.PollingRate
 }

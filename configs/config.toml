@@ -1,9 +1,8 @@
 [options]
 directory = "sync"
 module = "wiki"
+polling-rate = 5000
 
 [server]
 name = "Wiki server"
-port = 4690
-# address = "174.138.47.33"
-address = "localhost"
+address = "174.138.47.33"

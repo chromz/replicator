@@ -10,20 +10,11 @@ import (
 
 func main() {
 	log.Info("Initializing replicator client...")
-	configPath := ""
-	if len(os.Args) == 2 {
-		configPath = os.Args[1]
-	}
-	err := config.LoadConfig(configPath)
+	err := config.LoadConfig()
 	if err != nil {
 		os.Exit(1)
 	}
-	conn := client.ServerConn()
-	if conn == nil {
-		os.Exit(1)
-	}
 	client.Load()
-	go client.ListenCreatedFiles(conn)
 	watcher.Start(client.CreateHandler, client.WriteHandler,
 		client.RemoveHandler)
 }
