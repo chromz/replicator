@@ -1,18 +1,19 @@
 package log
 
 import (
-	logrus "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"os"
 )
 
-type LogEvent struct {
+// Event represents a log event
+type Event struct {
 	id      int
 	message string
 }
 
 var (
-	errorMessage = LogEvent{0, "%s %s"}
-	initMessage  = LogEvent{1, "Initializing %s with %s"}
+	errorMessage = Event{0, "%s %s"}
+	initMessage  = Event{1, "Initializing %s with %s"}
 )
 
 func init() {
@@ -28,14 +29,17 @@ func init() {
 
 }
 
+// Error is a function to pring all error related stuff
 func Error(msg string, err error) {
 	logrus.Errorf(errorMessage.message, msg, err)
 }
 
+// InitMessage logs initialization messages
 func InitMessage(msg, with string) {
 	logrus.Infof(initMessage.message, msg, with)
 }
 
+// Info is a generic function to log to stdout
 func Info(args ...interface{}) {
 	logrus.Info(args...)
 }

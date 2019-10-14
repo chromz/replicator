@@ -24,30 +24,27 @@ func runRsync(params ...string) (string, string, error) {
 
 func doSync(event fsnotify.Event) {
 	if event.Op&fsnotify.Create == fsnotify.Create {
-		stdout, stderr, err := runRsync("-avzh", event.Name, url)
+		_, stderr, err := runRsync("-avzh", event.Name, url)
 		if err != nil {
 			log.Error(stderr, err)
 			return
 		}
 		log.Info("Created file: ", event.Name)
-		log.Info(stdout)
 	} else if event.Op&fsnotify.Write == fsnotify.Write {
-		stdout, stderr, err := runRsync("-auvzh", event.Name, url)
+		_, stderr, err := runRsync("-auvzh", event.Name, url)
 		if err != nil {
 			log.Error(stderr, err)
 			return
 		}
 		log.Info("Updated file: ", event.Name)
-		log.Info(stdout)
 	} else if event.Op&fsnotify.Remove == fsnotify.Remove {
 		dir := config.Directory()
-		stdout, stderr, err := runRsync("-avhO", "--delete", dir, url)
+		_, stderr, err := runRsync("-avhO", dir, url, "--delete")
 		if err != nil {
 			log.Error(stderr, err)
 			return
 		}
 		log.Info("Deleted file: ", event.Name)
-		log.Info(stdout)
 	}
 }
 
@@ -68,6 +65,7 @@ func watchFile(watcher *fsnotify.Watcher) {
 	}
 }
 
+// Start is a function to start listening for inotify events
 func Start() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
