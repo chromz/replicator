@@ -28,11 +28,15 @@ type Server struct {
 var loadedConfig Config
 
 // LoadConfig loads the config file into memory
-func LoadConfig() error {
+func LoadConfig(configFileName *string) error {
 	viper.SetConfigType("toml")
-	viper.SetConfigName("config")
-	viper.AddConfigPath("/etc/replicator/")
-	viper.AddConfigPath("./configs")
+	if *configFileName != "" {
+		viper.SetConfigFile(*configFileName)
+	} else {
+		viper.SetConfigName("config")
+		viper.AddConfigPath("/etc/replicator/")
+		viper.AddConfigPath("./configs")
+	}
 	viper.SetDefault("port", 4690)
 	viper.SetDefault("directory", "/var/replicator/sync/")
 	viper.SetDefault("polling-rate", 5)

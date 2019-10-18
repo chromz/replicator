@@ -27,7 +27,8 @@ func NewTicker(directory, url string, pollingRate int) *Synchronizer {
 func pullChanges() {
 	var stdout, stderr bytes.Buffer
 	log.Info("Pulling changes")
-	cmd := exec.Command("rsync", "-avOzh", rsyncURL, destDir, "--delete")
+	cmd := exec.Command("rsync", "-avOzh", "--inplace",
+		rsyncURL, destDir, "--delete")
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
