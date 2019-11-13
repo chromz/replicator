@@ -24,14 +24,14 @@ func runRsync(params ...string) (string, string, error) {
 
 func doSync(event fsnotify.Event) {
 	if event.Op&fsnotify.Create == fsnotify.Create {
-		_, stderr, err := runRsync("-avzh", event.Name, url)
+		_, stderr, err := runRsync("-avzhP", event.Name, url)
 		if err != nil {
 			log.Error(stderr, err)
 			return
 		}
 		log.Info("Created file: ", event.Name)
 	} else if event.Op&fsnotify.Write == fsnotify.Write {
-		_, stderr, err := runRsync("-auvzh", event.Name, url)
+		_, stderr, err := runRsync("-auvzhP", event.Name, url)
 		if err != nil {
 			log.Error(stderr, err)
 			return
@@ -39,7 +39,7 @@ func doSync(event fsnotify.Event) {
 		log.Info("Updated file: ", event.Name)
 	} else if event.Op&fsnotify.Remove == fsnotify.Remove {
 		dir := config.Directory()
-		_, stderr, err := runRsync("-avhO", dir, url, "--delete")
+		_, stderr, err := runRsync("-avhOP", dir, url, "--delete")
 		if err != nil {
 			log.Error(stderr, err)
 			return

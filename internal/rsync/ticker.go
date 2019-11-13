@@ -30,7 +30,7 @@ func NewTicker(directory, tempDirectory, url string,
 func pullChanges() {
 	var stdout, stderr bytes.Buffer
 	log.Info("Pulling changes")
-	cmd := exec.Command("rsync", "-avOzh", "-T", tempDir,
+	cmd := exec.Command("rsync", "-avOzhP", "-T", tempDir,
 		rsyncURL, destDir, "--delete")
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
