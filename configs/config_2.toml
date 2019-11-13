@@ -1,0 +1,9 @@
+[options]
+directory = "sync2"
+module = "wiki"
+polling-rate = 10000
+temp-dir = "/tmp"
+
+[server]
+name = "Wiki server"
+address = "174.138.47.33"

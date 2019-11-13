@@ -82,7 +82,8 @@ func Start() {
 	if err != nil {
 		log.Error("Unable to add directory to watch list", err)
 	}
-	ticker := NewTicker(directory, url, config.PollingRate())
+	tempDir := config.TempDir()
+	ticker := NewTicker(directory, tempDir, url, config.PollingRate())
 	go ticker.Run()
 	log.InitMessage(
 		"rclient",

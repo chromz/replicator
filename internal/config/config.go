@@ -16,7 +16,8 @@ type Config struct {
 type Options struct {
 	Directory   string
 	Module      string
-	PollingRate int `mapstructure:"polling-rate"`
+	PollingRate int    `mapstructure:"polling-rate"`
+	TempDir     string `mapstructure:"temp-dir"`
 }
 
 // Server is the server section of the config file
@@ -40,6 +41,7 @@ func LoadConfig(configFileName *string) error {
 	viper.SetDefault("port", 4690)
 	viper.SetDefault("directory", "/var/replicator/sync/")
 	viper.SetDefault("polling-rate", 5)
+	viper.SetDefault("temp-dir", "/tmp")
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Error("Error reading config file", err)
@@ -76,6 +78,10 @@ func LoadConfig(configFileName *string) error {
 // Directory returns the directory to synchronize
 func Directory() string {
 	return loadedConfig.Options.Directory
+}
+
+func TempDir() string {
+	return loadedConfig.Options.TempDir
 }
 
 // Module gets the rsync module

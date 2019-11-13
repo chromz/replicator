@@ -14,11 +14,14 @@ type Synchronizer struct {
 
 var rsyncURL string
 var destDir string
+var tempDir string
 
 // NewTicker constructor of the synchronizer ticker
-func NewTicker(directory, url string, pollingRate int) *Synchronizer {
+func NewTicker(directory, tempDirectory, url string,
+	pollingRate int) *Synchronizer {
 	rsyncURL = url
 	destDir = directory
+	tempDir = tempDirectory
 	return &Synchronizer{
 		ticker: time.NewTicker(time.Millisecond * time.Duration(pollingRate)),
 	}
@@ -27,7 +30,7 @@ func NewTicker(directory, url string, pollingRate int) *Synchronizer {
 func pullChanges() {
 	var stdout, stderr bytes.Buffer
 	log.Info("Pulling changes")
-	cmd := exec.Command("rsync", "-avOzh", "--inplace",
+	cmd := exec.Command("rsync", "-avOzh", "-T", tempDir,
 		rsyncURL, destDir, "--delete")
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
