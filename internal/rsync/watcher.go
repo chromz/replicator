@@ -1,61 +1,30 @@
 package rsync
 
 import (
-	"bytes"
 	"github.com/chromz/replicator/internal/config"
 	"github.com/chromz/replicator/pkg/log"
 	"github.com/fsnotify/fsnotify"
-	"os/exec"
+	"sync"
 )
 
-var url string
-
-func runRsync(params ...string) (string, string, error) {
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("rsync", params...)
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	if err != nil {
-		return "", stderr.String(), err
-	}
-	return stdout.String(), "", nil
+// EventQueue is a fifo struct of fsnotify events
+type EventQueue struct {
+	// Events is the slice of fsnotify events
+	Events []fsnotify.Event
+	// Mux that locks the struct
+	Mux sync.Mutex
 }
 
-func doSync(event fsnotify.Event) {
-	if event.Op&fsnotify.Create == fsnotify.Create {
-		_, stderr, err := runRsync("-avzhP", event.Name, url)
-		if err != nil {
-			log.Error(stderr, err)
-			return
-		}
-		log.Info("Created file: ", event.Name)
-	} else if event.Op&fsnotify.Write == fsnotify.Write {
-		_, stderr, err := runRsync("-auvzhP", event.Name, url)
-		if err != nil {
-			log.Error(stderr, err)
-			return
-		}
-		log.Info("Updated file: ", event.Name)
-	} else if event.Op&fsnotify.Remove == fsnotify.Remove {
-		dir := config.Directory()
-		_, stderr, err := runRsync("-avhOP", dir, url, "--delete")
-		if err != nil {
-			log.Error(stderr, err)
-			return
-		}
-		log.Info("Deleted file: ", event.Name)
-	}
-}
-
-func watchFile(watcher *fsnotify.Watcher) {
+func watchFile(watcher *fsnotify.Watcher, eventQueue *EventQueue) {
 	for {
 		select {
 		case event, ok := <-watcher.Events:
 			if !ok {
 				return
 			}
-			doSync(event)
+			eventQueue.Mux.Lock()
+			eventQueue.Events = append(eventQueue.Events, event)
+			eventQueue.Mux.Unlock()
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return
@@ -74,20 +43,21 @@ func Start() {
 	defer watcher.Close()
 	host := config.RsyncServer().Address
 	module := config.Module()
-	url = host + "::" + module
+	url := host + "::" + module
+	dir := config.Directory()
+
+	eventQueue := &EventQueue{}
 	done := make(chan bool)
-	go watchFile(watcher)
-	directory := config.Directory()
-	err = watcher.Add(directory)
+	go watchFile(watcher, eventQueue)
+	err = watcher.Add(dir)
 	if err != nil {
 		log.Error("Unable to add directory to watch list", err)
 	}
-	tempDir := config.TempDir()
-	ticker := NewTicker(directory, tempDir, url, config.PollingRate())
+	ticker := NewTicker(url, eventQueue)
 	go ticker.Run()
 	log.InitMessage(
 		"rclient",
-		"directory \""+directory+"\"",
+		"directory \""+dir+"\"",
 	)
 	<-done
 }
