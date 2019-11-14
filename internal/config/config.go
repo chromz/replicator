@@ -16,6 +16,7 @@ type Config struct {
 type Options struct {
 	Directory   string
 	Module      string
+	SyncOnStart bool   `mapstructure:"sync-on-start"`
 	PollingRate int    `mapstructure:"polling-rate"`
 	TempDir     string `mapstructure:"temp-dir"`
 }
@@ -78,6 +79,11 @@ func LoadConfig(configFileName *string) error {
 // Directory returns the directory to synchronize
 func Directory() string {
 	return loadedConfig.Options.Directory
+}
+
+// SyncOnStart Flag that tells the replicator to push changes on start
+func SyncOnStart() bool {
+	return loadedConfig.Options.SyncOnStart
 }
 
 func TempDir() string {

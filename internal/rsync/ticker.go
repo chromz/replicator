@@ -123,18 +123,21 @@ func pullChanges() {
 
 // Run starts the ticker
 func (synchronizer *Synchronizer) Run() {
-	log.Info("Trying to do initial synchronization")
-	doneInitialSync := false
+	doneInitialSync := true
+	if config.SyncOnStart() {
+		doneInitialSync = false
+	}
 	for !doneInitialSync {
-		doneInitialSync = true
+		log.Info("Trying to do initial synchronization")
 		_, stderr, err := runRsync("-avuOzhP", destDir, rsyncURL)
-		if err != nil {
+		if err == nil {
+			doneInitialSync = true
+			log.Info("Initial synchronization done")
+		} else {
 			log.Error(stderr, err)
-			doneInitialSync = false
 		}
 		time.Sleep(time.Millisecond * time.Duration(config.PollingRate()))
 	}
-	log.Info("Initial synchronization done")
 	for {
 		select {
 		case <-synchronizer.ticker.C:
