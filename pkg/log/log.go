@@ -43,3 +43,8 @@ func InitMessage(msg, with string) {
 func Info(args ...interface{}) {
 	logrus.Info(args...)
 }
+
+// Warn is a generic function to log a warning to stdout
+func Warn(args ...interface{}) {
+	logrus.Warn(args...)
+}

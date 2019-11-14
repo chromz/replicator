@@ -25,6 +25,7 @@ func watchFile(watcher *fsnotify.Watcher, eventQueue *EventQueue) {
 			eventQueue.Mux.Lock()
 			eventQueue.Events = append(eventQueue.Events, event)
 			eventQueue.Mux.Unlock()
+			sweepQueue()
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return

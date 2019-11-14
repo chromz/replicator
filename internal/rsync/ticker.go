@@ -5,6 +5,7 @@ import (
 	"github.com/chromz/replicator/internal/config"
 	"github.com/chromz/replicator/pkg/log"
 	"github.com/fsnotify/fsnotify"
+	"os"
 	"os/exec"
 	"time"
 )
@@ -49,6 +50,11 @@ func sweepQueue() {
 	newQueue := eventQueue.Events[:0]
 	for _, event := range eventQueue.Events {
 		if event.Op&fsnotify.Create == fsnotify.Create {
+			if _, err := os.Stat(event.Name); os.IsNotExist(err) {
+				log.Warn("Unable to create file " + event.Name +
+					": File does not exist")
+				continue
+			}
 			_, stderr, err := runRsync("-avzhP", event.Name, rsyncURL)
 			if err != nil {
 				log.Error(stderr, err)
@@ -57,6 +63,11 @@ func sweepQueue() {
 			}
 			log.Info("Created file: ", event.Name)
 		} else if event.Op&fsnotify.Write == fsnotify.Write {
+			if _, err := os.Stat(event.Name); os.IsNotExist(err) {
+				log.Warn("Unable to create file " + event.Name +
+					": File does not exist")
+				continue
+			}
 			_, stderr, err := runRsync("-auvzhP", event.Name, rsyncURL)
 			if err != nil {
 				log.Error(stderr, err)
@@ -65,6 +76,14 @@ func sweepQueue() {
 			}
 			log.Info("Updated file: ", event.Name)
 		} else if event.Op&fsnotify.Remove == fsnotify.Remove {
+			if _, err := os.Stat(event.Name); err == nil {
+				err = os.Remove(event.Name)
+				if err != nil {
+					log.Error("Unable to remove file "+
+						event.Name, err)
+				}
+				continue
+			}
 			dir := config.Directory()
 			_, stderr, err := runRsync("-avhOP", dir, rsyncURL, "--delete")
 			if err != nil {
@@ -73,6 +92,7 @@ func sweepQueue() {
 				continue
 			}
 			log.Info("Deleted file: ", event.Name)
+
 		}
 
 	}
