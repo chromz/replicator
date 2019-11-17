@@ -4,6 +4,8 @@ import (
 	"github.com/chromz/replicator/internal/config"
 	"github.com/chromz/replicator/pkg/log"
 	"github.com/fsnotify/fsnotify"
+	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -54,7 +56,17 @@ func Start() {
 	if err != nil {
 		log.Error("Unable to add directory to watch list", err)
 	}
-	ticker := NewTicker(url, eventQueue)
+	filepath.Walk(dir, func(path string, info os.FileInfo,
+		err error) error {
+		mode := info.Mode()
+		if mode.IsDir() {
+			log.Info("Watching directory: " + path)
+			err = watcher.Add(path)
+			return err
+		}
+		return nil
+	})
+	ticker := NewTicker(url, eventQueue, watcher)
 	go ticker.Run()
 	log.InitMessage(
 		"rclient",

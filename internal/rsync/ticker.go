@@ -19,12 +19,15 @@ var rsyncURL string
 var destDir string
 var tempDir string
 var eventQueue *EventQueue
+var watcher *fsnotify.Watcher
 
 // NewTicker constructor of the synchronizer ticker
-func NewTicker(url string, queue *EventQueue) *Synchronizer {
+func NewTicker(url string, queue *EventQueue,
+	fileWatcher *fsnotify.Watcher) *Synchronizer {
 	rsyncURL = url
 	destDir = config.Directory()
 	tempDir = config.TempDir()
+	watcher = fileWatcher
 	eventQueue = queue
 	return &Synchronizer{
 		ticker: time.NewTicker(time.Millisecond *
@@ -53,6 +56,16 @@ func sweepQueue() {
 			if _, err := os.Stat(event.Name); os.IsNotExist(err) {
 				log.Warn("Unable to create file " + event.Name +
 					": File does not exist")
+				continue
+			}
+			if fileInfo, err := os.Stat(event.Name); err == nil {
+				mode := fileInfo.Mode()
+				// Add a watcher if create file is directory
+				if mode.IsDir() {
+					watcher.Add(event.Name)
+				}
+			} else {
+				log.Error("Could not create file", err)
 				continue
 			}
 			_, stderr, err := runRsync("-avzhP", event.Name, rsyncURL)
