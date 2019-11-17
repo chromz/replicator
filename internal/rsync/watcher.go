@@ -42,21 +42,27 @@ func Start() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Error("Unable to create watcher", err)
+		return
 	}
 	defer watcher.Close()
 	host := config.RsyncServer().Address
 	module := config.Module()
 	url := host + "::" + module
 	dir := config.Directory()
+	err = os.Chdir(dir)
+	if err != nil {
+		log.Error("Unable to change directories: ", err)
+		return
+	}
 
 	eventQueue := &EventQueue{}
 	done := make(chan bool)
 	go watchFile(watcher, eventQueue)
-	err = watcher.Add(dir)
+	err = watcher.Add(".")
 	if err != nil {
 		log.Error("Unable to add directory to watch list", err)
 	}
-	filepath.Walk(dir, func(path string, info os.FileInfo,
+	filepath.Walk(".", func(path string, info os.FileInfo,
 		err error) error {
 		mode := info.Mode()
 		if mode.IsDir() {

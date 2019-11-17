@@ -16,7 +16,6 @@ type Synchronizer struct {
 }
 
 var rsyncURL string
-var destDir string
 var tempDir string
 var eventQueue *EventQueue
 var watcher *fsnotify.Watcher
@@ -25,7 +24,6 @@ var watcher *fsnotify.Watcher
 func NewTicker(url string, queue *EventQueue,
 	fileWatcher *fsnotify.Watcher) *Synchronizer {
 	rsyncURL = url
-	destDir = config.Directory()
 	tempDir = config.TempDir()
 	watcher = fileWatcher
 	eventQueue = queue
@@ -62,13 +60,15 @@ func sweepQueue() {
 				mode := fileInfo.Mode()
 				// Add a watcher if create file is directory
 				if mode.IsDir() {
+					log.Info("Watching directory: " +
+						event.Name)
 					watcher.Add(event.Name)
 				}
 			} else {
 				log.Error("Could not create file", err)
 				continue
 			}
-			_, stderr, err := runRsync("-avzhP", event.Name, rsyncURL)
+			_, stderr, err := runRsync("-avzhROP", event.Name, rsyncURL)
 			if err != nil {
 				log.Error(stderr, err)
 				newQueue = append(newQueue, event)
@@ -81,7 +81,7 @@ func sweepQueue() {
 					": File does not exist")
 				continue
 			}
-			_, stderr, err := runRsync("-auvzhP", event.Name, rsyncURL)
+			_, stderr, err := runRsync("-auvzhROP", event.Name, rsyncURL)
 			if err != nil {
 				log.Error(stderr, err)
 				newQueue = append(newQueue, event)
@@ -97,8 +97,14 @@ func sweepQueue() {
 				}
 				continue
 			}
-			dir := config.Directory()
-			_, stderr, err := runRsync("-avhOP", dir, rsyncURL, "--delete")
+			if fileInfo, err := os.Stat(event.Name); err == nil {
+				mode := fileInfo.Mode()
+				// Add a watcher if create file is directory
+				if mode.IsDir() {
+					watcher.Remove(event.Name)
+				}
+			}
+			_, stderr, err := runRsync("-avhORP", ".", rsyncURL, "--delete")
 			if err != nil {
 				log.Error(stderr, err)
 				newQueue = append(newQueue, event)
@@ -125,8 +131,8 @@ func pullChanges() {
 		}
 	}
 	eventQueue.Mux.Unlock()
-	stdout, stderr, err := runRsync("-avuOzhP", "-T", tempDir,
-		rsyncURL, destDir, "--delete")
+	stdout, stderr, err := runRsync("-avOzhRP", "-T", tempDir,
+		rsyncURL, ".", "--delete")
 	if err != nil {
 		log.Error("Unable to run rsync pull: "+stderr, err)
 		return
@@ -142,7 +148,7 @@ func (synchronizer *Synchronizer) Run() {
 	}
 	for !doneInitialSync {
 		log.Info("Trying to do initial synchronization")
-		_, stderr, err := runRsync("-avuOzhP", destDir, rsyncURL)
+		_, stderr, err := runRsync("-avuOzhRP", ".", rsyncURL)
 		if err == nil {
 			doneInitialSync = true
 			log.Info("Initial synchronization done")
